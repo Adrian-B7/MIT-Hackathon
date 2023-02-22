@@ -11,8 +11,6 @@
   ],
   "permissions": [
     "activeTab",
-    "https://*.ebay.com/*",
-    "xmlhttprequest",
     "geolocation"
   ]
 }

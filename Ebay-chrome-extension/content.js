@@ -1,3 +1,6 @@
+
+const API_KEY = "YOUR_API_KEY"
+
 let latitude1, longitude1;
 function getLocation() {
   return new Promise((resolve, reject) => {
@@ -42,7 +45,7 @@ function fetchSelectedElement(href,lat,long) {
         const locationQuery = location.innerText;
 
 // // Construct the API URL with the location query and API key
-        const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(locationQuery)}&key=AIzaSyC5DYFl09zEZXKONOE4-iGNJXubF3R6aks`;
+        const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(locationQuery)}&key=${API_KEY}`;
 
         // Make a request to the API
         fetch(apiUrl)
@@ -90,8 +93,8 @@ function deg2rad(deg) {
 
 
 
-const products = document.querySelectorAll('li.s-item.s-item__pl-on-bottom');
-const product = Array.from(products).slice(0, 2);
+const product = document.querySelectorAll('li.s-item.s-item__pl-on-bottom');
+// const product = Array.from(products).slice(0, 3);
 
 async function logLocation() {
   await main();

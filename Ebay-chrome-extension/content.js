@@ -1,49 +1,130 @@
-// Select all elements with the class '.s-item__details.clearfix'
-const productDetails = document.querySelectorAll('.s-item__details.clearfix');
-
-// Loop through each product detail
-productDetails.forEach(async details => {
-  // Get the parent element of the current detail element
-  const infoDiv = details.parentElement;
-  // Get the first 'a' element within the parent element
-  const link = infoDiv.querySelector('a');
-  // If there's no 'a' element, return and move on to the next iteration
-  if (!link) {
-    return;
-  }
-  // Fetch the content of the URL specified in the 'href' attribute of the 'a' element
-  const response = await fetch(link.href);
-  // If the fetch was unsuccessful, return and move on to the next iteration
-  if (!response.ok) {
-    return;
-  }
-  // Get the text content of the fetched response
-  const content = await response.text();
-  // Create a new DOMParser object
-  const parser = new DOMParser();
-  // Parse the text content as HTML
-  const parsedHtml = parser.parseFromString(content, 'text/html');
-  // Get the first element with the class '.item-highlights-wrapper' within the parsed HTML
-  const highlightsWrapper = parsedHtml.querySelector('.item-highlights-wrapper');
-  // If there's no '.item-highlights-wrapper' element, return and move on to the next iteration
-  if (!highlightsWrapper) {
-    return;
-  }
-  // Get all elements with the class '.item-highlight' within the '.item-highlights-wrapper' element
-  const highlights = highlightsWrapper.querySelectorAll('.item-highlight');
-  let targetHighlight;
-  // Loop through each highlight
-  highlights.forEach(highlight => {
-    // If the text content of the current highlight starts with the string 'Get it by'
-    if (highlight.textContent.startsWith('Get it by')) {
-      // Set the current highlight as the target highlight
-      targetHighlight = highlight;
+let latitude1, longitude1;
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(resolve, reject);
+    } else {
+      reject('Geolocation API is not available');
     }
   });
-  // If there's no target highlight, return and move on to the next iteration
-  if (!targetHighlight) {
-    return;
+}
+async function main() {
+  try {
+    const position = await getLocation();
+    latitude1 = position.coords.latitude;
+    longitude1 = position.coords.longitude;
+
+    // console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+
+    return { latitude1, longitude1 };
+  } catch (error) {
+    console.error(`Error getting location: ${error}`);
+    return null;
   }
-  // Append the target highlight to the current detail element
-  details.appendChild(targetHighlight);
-});
+}
+
+
+
+
+
+function fetchSelectedElement(href,lat,long) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        const parser = new DOMParser();
+        const htmlDoc = parser.parseFromString(xhr.responseText, 'text/html');
+        const shippingElement = htmlDoc.querySelector('#vi-ship-maincntr');
+        // const element = shippingElement.querySelector(".ux-labels-values.col-12.ux-labels-values--itemLocation");
+        const location = shippingElement.querySelector("span.ux-textspans.ux-textspans--BOLD.ux-textspans--SECONDARY");
+  
+        const locationQuery = location.innerText;
+
+// // Construct the API URL with the location query and API key
+        const apiUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(locationQuery)}&key=AIzaSyC5DYFl09zEZXKONOE4-iGNJXubF3R6aks`;
+
+        // Make a request to the API
+        fetch(apiUrl)
+          .then(response => response.json())
+          .then(data => {
+            // Extract the latitude and longitude from the API response
+            const latitude = data.results[0].geometry.location.lat;
+            const longitude = data.results[0].geometry.location.lng;
+            const distance = getDistanceFromLatLonInKm(lat,long,latitude,longitude)
+            // console.log(`Distance: ${distance}`);
+            resolve(distance);
+          })
+          .catch(error => {
+            console.error(`Error getting location: ${error.message}`);
+          });
+
+        // Resolve with the selected element
+        
+        
+      }
+    };
+
+    xhr.open('GET', href);
+    xhr.send();
+  });
+}
+
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2-lat1);  // deg2rad below
+  var dLon = deg2rad(lon2-lon1); 
+  var a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  var d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180)
+}
+
+
+
+const products = document.querySelectorAll('li.s-item.s-item__pl-on-bottom');
+const product = Array.from(products).slice(0, 2);
+
+async function logLocation() {
+  await main();
+  product.forEach(element => {
+    const details =  element.querySelector('.s-item__details.clearfix');
+  
+    const link = element.querySelector('a.s-item__link');
+    const label = document.createElement('div');
+    label.className = 's-item__detail s-item__detail--primary';
+    label.style.color = 'green';
+    // label.innerText = link.href;
+    details.appendChild(label);
+
+    fetchSelectedElement(link.href,latitude1,longitude1)
+      .then(selectedElement => {
+        // Access the selected element for this link
+        // console.log(`Selected element for ${link.href}: ${selectedElement.textContent}`);
+        label.innerText = selectedElement;
+      })
+      .catch(error => console.error(error));
+    
+   
+  });
+}
+
+logLocation()
+// console.log(selectedElement)
+
+
+
+
+
+
+
+// // Define the location query
+
